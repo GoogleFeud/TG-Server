@@ -1,7 +1,10 @@
 
+import "./src/backend/Mafia/Engine.dart";
+
+/** 
 import "dart:io";
-import 'src/Server.dart';
-import "src/WebSocket.dart" show CustomWebSocket, subscribeToEvent;
+import 'src/backend/Server/Server.dart';
+import "src/backend/Server/WebSocket.dart" show CustomWebSocket, subscribeToEvent;
 
 Map sockets = new Map();
 
@@ -49,4 +52,80 @@ void main() async {
   });
 
   server.listen(4000);
+}
+**/
+
+void main() {
+
+events.on("setRole", (Engine engine, Map data) {
+   print("${data["player"].name}'s role is now ${data["current"].name}");
+});
+
+events.on("Day", (Engine engine, Map data) {
+   var phase = data["phase"];
+   print("It's Day ${phase.iterations}");
+   if (phase.iterations == 4) {
+      engine.phases.jumpTo("Secret");
+   }
+});
+
+events.on("Night", (Engine engine, Map data) {
+   var phase = data["phase"];
+   print("It's Night ${phase.iterations}");
+});
+
+events.on("Secret", (Engine engine, Map data) {
+   print("Secret :D");
+});
+
+Engine game = new Engine();
+
+game.roles.add(
+   name: "Citizen",
+   faction: "Town",
+   alignment: "Citizen",
+  );
+
+  game.roles.add(
+   name: "Jailor",
+   faction: "Town",
+   amount: 1,
+   alignment: "Citizen"
+  );
+
+  game.roles.add(
+   name: "Goon",
+   faction: "Mafia",
+   alignment: "Citizen"
+  );
+
+  game.roles.add(
+   name: "Mafioso",
+   faction: "Mafia",
+   amount: 1,
+   alignment: "Killing"
+  );
+
+game.players.create(name: "Google");
+game.players.create(name: "Volen");
+game.players.create(name: "Tyler");
+
+game.phases.addMany([
+  {"name": "Day", "duration": 10000, "next": "Night"},
+  {"name": "Night", "duration": 5000, "next": "Day"},
+  {"name": "Secret", "duration": 15000, "next": "Night"}
+]);
+
+game.roll([
+  "Any",
+  "Random Town",
+  "Random Mafia"
+], (currentRole, [rolledRoles, slot1, slot2]) {
+      if (currentRole.name == "Citizen" && slot1 == "Any") return false;
+      return true;
+});
+
+print(game.players.map((p) => p.role.name));
+game.start();
+
 }
