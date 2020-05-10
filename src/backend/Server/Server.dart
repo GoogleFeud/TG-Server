@@ -6,13 +6,9 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
 
  class Server {
   HttpServer engine;
-  Map paths;
-  Map reconnecting;
+  Map paths = {};
+  Map reconnecting = {};
 
-  Server() {
-     this.paths = new Map();
-     this.reconnecting = new Map();
-  }
 
   void add(String path, String method, Function(HttpRequest, Server) res) {
     if (this.paths.containsKey(path)) this.paths[path][method] = res;
@@ -45,7 +41,7 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
   }
 }
 
-  Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier, bool ignoreDups]) async {
+  Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier, bool stillConnect, bool ignoreDups]) async {
       CustomWebSocket customSocket;
       String socketId = this.getCookie("sid_c_d", req)?.value;
       if (existingSocketVerifier != null) {
@@ -56,13 +52,20 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
            verified.state = CustomWebSocketStates.CONNECTED;
            verified.swapSocket(await WebSocketTransformer.upgrade(req));
            callEvent("reconnect", verified);
+           customSocket = verified;
         }
         else if (verified.state == CustomWebSocketStates.CONNECTED) {
+          if (stillConnect == true) {
+            customSocket = new CustomWebSocket();
+            this.setCookie("sid_c_d", customSocket.setId(), req);
+            customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
+            callEvent("duplicate", verified, {"newSocket": customSocket});
+          }else {
           callEvent("duplicate", verified);
           if (ignoreDups == false || ignoreDups == null) return verified;
           return null;
+          }
         }
-        customSocket = verified;
         }
       }
       if (customSocket == null) {
@@ -93,7 +96,7 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
     this.reconnecting.remove(socket_id);
   }
 
-  void sendFile(String path, HttpRequest req) async {
+   sendFile(String path, HttpRequest req) async {
      String type = "text/" + path.split(".")[2];
      if (Server.TRANSLATED_TYPES[type] != null) type = Server.TRANSLATED_TYPES[type];
      req.response.headers.set(HttpHeaders.contentTypeHeader, type);

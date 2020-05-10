@@ -29,6 +29,12 @@ class PhaseCollection extends Collection<String, Phase> {
      next([Phase customCurrent, int customDuration]) {
 
        this.engine.timer = new Timer(Duration(milliseconds: customDuration != null ? customDuration:this.current.duration), () {
+
+           if (this.engine.noDeathsIn > 5) {
+             events.emit("draw", this.engine);
+             this.engine.stop();
+           }
+
            this.phaseStartedAt = DateTime.now();
            this.engine.noDeathsIn++;
 
@@ -37,7 +43,7 @@ class PhaseCollection extends Collection<String, Phase> {
              this.current.iterations++;
            } 
 
-           // CHECK WIN HERE
+            if (this.engine.checkWin()) return;
             if (customCurrent != null) this.current = customCurrent;
             else this.current = this.get(this.current.next);
             events.emit(this.current.name, this.engine, {"phase": this.current});

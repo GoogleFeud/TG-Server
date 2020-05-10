@@ -59,6 +59,7 @@ class PlayerCollection extends Collection<String, Player> {
     void executeNightActions() {
        List<Player> priorities = this.orderByPriority();
        for (Player p in priorities) {
+           if (p.getFromStorage("roleblocked") == true) continue;
            p.role.action(p, p.action?.target, p.action?.others);
        }
     }

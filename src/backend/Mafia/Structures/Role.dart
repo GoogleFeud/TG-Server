@@ -23,7 +23,7 @@ class Role {
    WinCondition winCondition;
    Function action;
 
-   Role({String name, String faction, String alignment, int uses, int bits, List<String> cantTarget, int priority, int amount, List<String> rolledFrom, Function action, dynamic winCondition, int attack, int defense, int amountOfTargets, int allowSelf, int canTargetDead, int factionalAction}) {
+   Role({String name, String faction, String alignment, int uses, int bits, List<String> cantTarget, int priority, int amount, List<String> rolledFrom, Function action, WinCondition winCondition, int attack, int defense, int amountOfTargets, int allowSelf, int canTargetDead, int factionalAction}) {
       if (name != null) this.realName = name;
       if (faction != null) this.faction = faction;
       if (alignment != null) this.alignment = alignment;
@@ -39,13 +39,13 @@ class Role {
       this.allowSelf = allowSelf ?? 0;
       this.canTargetDead = canTargetDead ?? 0;
       this.factionalAction = factionalAction ?? 0;
-      this.winCondition = WinCondition.from(winCondition);
+      this.winCondition = winCondition;
       if (bits != null) this.attributes.set(bits);
       if (cantTarget != null) this.cantTarget = cantTarget;
    }
 
    Role clone([List<String> rolledFrom]) {
-     return new Role(name: this.realName, faction: this.faction, alignment: this.alignment, uses: this.uses, bits: this.attributes.bits, cantTarget: this.cantTarget, priority: this.priority, rolledFrom: rolledFrom, action: this.action, attack: this.attack, defense: this.defense, amountOfTargets: this.amountOfTargets, allowSelf: this.allowSelf, canTargetDead: this.canTargetDead, factionalAction: this.factionalAction);
+     return new Role(name: this.realName, faction: this.faction, alignment: this.alignment, uses: this.uses, bits: this.attributes.bits, cantTarget: this.cantTarget, priority: this.priority, rolledFrom: rolledFrom, action: this.action, attack: this.attack, defense: this.defense, amountOfTargets: this.amountOfTargets, allowSelf: this.allowSelf, canTargetDead: this.canTargetDead, factionalAction: this.factionalAction, winCondition: this.winCondition);
    }
 
    toString() {

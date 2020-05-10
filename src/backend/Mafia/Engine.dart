@@ -8,6 +8,7 @@ import 'Collection.dart';
 import 'Collectors/PhaseCollection.dart';
 import 'Structures/Player.dart';
 import 'Structures/Role.dart';
+import 'Structures/WinConditioner.dart';
 
 EventCollection events = new EventCollection();
 
@@ -16,6 +17,7 @@ class Engine {
    PlayerCollection players;
    RoleCollection roles = new RoleCollection();
    PhaseCollection phases;
+   WinConditioner winConditioner = new WinConditioner();
    Map factionalActions = {};
    Timer timer;
    int noDeathsIn = 0;
@@ -63,6 +65,16 @@ class Engine {
             secs = 0;
         }
         return [mins, secs];
+   }
+
+   bool checkWin() {
+      var check = this.winConditioner.check(this);
+      if (check != null) {
+         events.emit("win", this, {"check": check});
+         this.stop();
+         return true;
+      }
+      return false;
    }
 
    static int addBits(List<int> bits) {
