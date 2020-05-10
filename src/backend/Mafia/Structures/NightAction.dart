@@ -7,7 +7,7 @@ class NightAction {
     Player target;
     Map others = {};
 
-    Action(Player player, [Player target, Map others]) {
+    NightAction(Player player, [Player target, Map others]) {
       this.player = player;
       if (target != null) this.target = target;
       if (others != null) this.others = others; 

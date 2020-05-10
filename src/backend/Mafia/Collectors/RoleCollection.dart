@@ -4,11 +4,12 @@ import "../Structures/Role.dart" show  Role;
 import "../Collection.dart" show Collection;
 
 class RoleCollection extends Collection<String, Role> {
+
     RoleCollection() : super() {
     }
 
-    Role add({String name, String faction, String alignment, int uses, int bits, List<String> cantTarget, int priority, int amount, Function action, dynamic winCondition}) {
-        Role s = new Role(name: name, faction: faction, alignment: alignment, uses: uses, bits: bits, cantTarget: cantTarget, priority: priority, amount: amount, action: action, winCondition: winCondition);
+    Role add({String name, String faction, String alignment, int uses, int bits, List<String> cantTarget, int priority, int amount, Function action, dynamic winCondition, int attack, int defense, int amountOfTargets, int allowSelf, int canTargetDead, int factionalAction}) {
+        Role s = new Role(name: name, faction: faction, alignment: alignment, uses: uses, bits: bits, cantTarget: cantTarget, priority: priority, amount: amount, action: action, winCondition: winCondition, attack: attack, defense: defense, amountOfTargets: amountOfTargets, allowSelf: allowSelf, canTargetDead: canTargetDead, factionalAction: factionalAction);
         this.set(name, s);
         return s;
     }

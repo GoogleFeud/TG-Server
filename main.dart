@@ -1,5 +1,6 @@
 
 import "./src/backend/Mafia/Engine.dart";
+import 'src/backend/Mafia/Structures/Role.dart';
 
 /** 
 import "dart:io";
@@ -64,14 +65,47 @@ events.on("setRole", (Engine engine, Map data) {
 events.on("Day", (Engine engine, Map data) {
    var phase = data["phase"];
    print("It's Day ${phase.iterations}");
+   Future.delayed(Duration(seconds: 4), () {
+     engine.players.forEach((p) => p.vote(engine.players.random()[0]));
+   });
    if (phase.iterations == 4) {
       engine.phases.jumpTo("Secret");
    }
 });
 
+events.on("Day-End", (Engine engine, Map data) {
+    engine.players.clearRelatedProperties();
+});
+
 events.on("Night", (Engine engine, Map data) {
    var phase = data["phase"];
    print("It's Night ${phase.iterations}");
+   engine.players.find((p) => p.role.name == "Goon")?.setNightAction(engine.players.find((p) => p.role.name == "Jailor"));
+});
+
+events.on("setAction", (Engine engine, Map data)  {
+     var p = data["player"];
+     print("${p} set their action! Their target is ${p.action.target}");
+});
+
+events.on("Night-End", (Engine engine, Map data) {
+   var phase = data["phase"];
+   engine.players.executeNightActions();
+   print("Night ${phase.iterations} is over!");
+});
+
+events.on("vote", (Engine engine, Map data) {
+     var voter = data["voter"];
+     var votee = data["votee"];
+     print("${voter} has voted for ${votee}. ${votee} now has ${votee.votes} votes.");
+});
+
+events.on("voteMaj", (Engine engine, Map data) {
+   var voter = data["voter"];
+    var votee = data["votee"];
+    print("${voter} has voted for ${votee}. ${votee} now has ${votee.votes} votes, that's the majority! Say bye to ${votee}!");
+    votee.kill();
+    engine.phases.jumpTo("Night");
 });
 
 events.on("Secret", (Engine engine, Map data) {
@@ -80,35 +114,47 @@ events.on("Secret", (Engine engine, Map data) {
 
 Engine game = new Engine();
 
-game.roles.add(
-   name: "Citizen",
-   faction: "Town",
-   alignment: "Citizen",
-  );
 
   game.roles.add(
    name: "Jailor",
    faction: "Town",
    amount: 1,
-   alignment: "Citizen"
+   priority: 5,
+   alignment: "Power",
+   bits: Engine.addBits([Role.AUTO_VEST]),
+   action: (player, [target, Map data]) {
+       print("${player} (with role ${player.role}) did their night action}");
+   }
   );
 
   game.roles.add(
    name: "Goon",
    faction: "Mafia",
-   alignment: "Citizen"
+   priority: 4,
+   attack: 1,
+   alignment: "Citizen",
+   action: (player, [target, Map data]) {
+       if (player.canKill(target)) {
+          target.kill("murdered by the Mafia");
+          print("${player} murdered ${target}!");
+       }else print("${player} coudn't kill ${target}");
+   }
   );
 
   game.roles.add(
    name: "Mafioso",
    faction: "Mafia",
    amount: 1,
+   priority: 3,
+      action: (player, [target, Map data]) {
+       print("${player} (with role ${player.role}) did their night action on ${target}");
+   },
    alignment: "Killing"
   );
 
-game.players.create(name: "Google");
-game.players.create(name: "Volen");
-game.players.create(name: "Tyler");
+game.players.add(name: "Google");
+game.players.add(name: "Volen");
+game.players.add(name: "Tyler");
 
 game.phases.addMany([
   {"name": "Day", "duration": 10000, "next": "Night"},
@@ -117,15 +163,12 @@ game.phases.addMany([
 ]);
 
 game.roll([
-  "Any",
   "Random Town",
-  "Random Mafia"
-], (currentRole, [rolledRoles, slot1, slot2]) {
-      if (currentRole.name == "Citizen" && slot1 == "Any") return false;
-      return true;
-});
+  "Random Mafia",
+   "Any"
+]);
 
-print(game.players.map((p) => p.role.name));
+print(game.players.map((p) => p?.role?.name));
 game.start();
 
 }

@@ -12,4 +12,9 @@ class Phase {
       this.duration = duration;
       this.next = next;
     }
+
+    toString() {
+      return this.name;
+    }
+    
 }

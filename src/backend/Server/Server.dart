@@ -1,7 +1,7 @@
 
 import 'dart:async';
 import "dart:io";
-import 'dart:convert' show json, utf8, base64;
+import 'dart:convert' show json;
 import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
 
  class Server {

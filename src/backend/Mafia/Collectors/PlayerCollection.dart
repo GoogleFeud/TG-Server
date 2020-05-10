@@ -4,6 +4,7 @@ import '../../Server/WebSocket.dart';
 import "../Collection.dart" show Collection;
 import '../Engine.dart';
 import '../Structures/Player.dart';
+import '../Structures/Role.dart';
 
 class PlayerCollection extends Collection<String, Player> {
   Engine engine;
@@ -12,7 +13,7 @@ class PlayerCollection extends Collection<String, Player> {
       this.engine = engine;
     }
 
-    Player create({String name, CustomWebSocket ws}) {
+    Player add({String name, CustomWebSocket ws}) {
          Player pl = new Player(engine: this.engine, number: this.size + 1, name: name, ws: ws);
          this.set(name, pl);
          return pl;
@@ -26,6 +27,11 @@ class PlayerCollection extends Collection<String, Player> {
        });
        this.delete(name);
        return p;
+    }
+
+     calculateMajority() {
+      int alive = this.alive().size;
+      return (alive % 2 == 0) ? (alive / 2) + 1:(alive/2).ceil();
     }
 
     Collection<String, Player> alive() {
@@ -45,9 +51,26 @@ class PlayerCollection extends Collection<String, Player> {
     }
 
     List<Player> orderByPriority() {
-      List<Player> s = this.values().where((v) => v.role != null && v.role.priority > 0 && v.getFromStorage("roleblocked") == null).toList();
+      List<Player> s = this.filter((v) => v.role.attributes.get(Role.ALWAYS_ACTION) || (v.action != null && v.role != null && v.role.action != null && v.role.priority > 0 && v.getFromStorage("roleblocked") != true)).values();
       s.sort((p, p1) => p.priority - p1.priority);
       return s;
+    }
+
+    void executeNightActions() {
+       List<Player> priorities = this.orderByPriority();
+       for (Player p in priorities) {
+           p.role.action(p, p.action?.target, p.action?.others);
+       }
+    }
+
+    void clearRelatedProperties() {
+        this.forEach((p) {
+            p.action = null;
+            p.votes = 0;
+            p.votedFor = null;
+            p.tempStorage.clear();
+        });
+        this.engine.factionalActions.clear();
     }
 
 

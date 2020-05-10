@@ -16,6 +16,7 @@ class Engine {
    PlayerCollection players;
    RoleCollection roles = new RoleCollection();
    PhaseCollection phases;
+   Map factionalActions = {};
    Timer timer;
    int noDeathsIn = 0;
 
@@ -46,5 +47,28 @@ class Engine {
      this.phases.next(this.phases.first(), 0);
    }
 
+   void stop() {
+     this.players.clear();
+     this.timer.cancel();
+     this.noDeathsIn = 0;
+  }
+
+   List<int> timeLeft() {
+       int now = DateTime.now().millisecondsSinceEpoch;
+       int msLeft = this.phases.current.duration - (now - this.phases.phaseStartedAt.millisecondsSinceEpoch);
+       int mins = (msLeft / 60000).floor();
+       int secs = ((msLeft % 60000) / 1000).round();
+        if (secs == 60) {
+            mins++;
+            secs = 0;
+        }
+        return [mins, secs];
+   }
+
+   static int addBits(List<int> bits) {
+         int tot = 0;
+         for (int bit in bits) tot ^= (1 << bit);
+         return tot;
+   }
 
 }

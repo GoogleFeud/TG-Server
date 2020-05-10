@@ -126,37 +126,40 @@ import 'dart:math';
     }
 
     Iterable<V> values() {
-      return this._map.values;
+      return this._map.values.toList();
     }
 
     String toString() {
       return this._map.toString();
     }
-     int get size {
+
+    void clear() {
+      return this._map.clear();
+    }
+
+    int get size {
        return this._map.length;
      }
 
 }
 
 class Bitfield {
-    int bits = 0;
+    int bits;
 
     Bitfield([int bits]) {
-      this.bits = bits;
+      this.bits = bits ?? 0;
     }
 
-    int has(int bit) {
-      return this.bits & bit;
+     bool get(int position) {
+       return (this.bits & (1 << position)) == 0 ? false : true;
     }
 
-    void add(List<int> bits) {
-       int res = 0;
-       for (int bit in bits) res |= bit;
-       this.bits |= res;
+    void set(int bits) {
+      this.bits |= bits;
     }
 
-    void set(int bit) {
-      this.bits = bit;
+    void update(int position, int bitValue) {
+       this.bits ^= (1 << position);
     }
 
 
