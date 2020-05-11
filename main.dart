@@ -64,7 +64,7 @@ events.on("win", (Engine engine, [Map data]) {
    print("${data["check"]} wins! Winners: ${engine.winConditioner.stripWinners()}");
 });
 
-Engine game = new Engine();
+Engine game = new Engine("1");
 
 WinCondition townWin = new WinCondition(WinCondition.WHEN_X_FACTION_IS_DEAD, ["Mafia"], ["Neutral_Killing"]);
 WinCondition mafWin = new WinCondition(WinCondition.WHEN_X_FACTION_IS_DEAD, ["Town"], ["Neutral_Killing"]);

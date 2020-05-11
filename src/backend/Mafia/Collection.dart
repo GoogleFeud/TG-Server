@@ -125,6 +125,10 @@ import 'dart:math';
       return this._map;
     }
 
+    Iterable<MapEntry<K, V>> entries() {
+      return this._map.entries;
+    }
+
     Iterable<V> values() {
       return this._map.values.toList();
     }

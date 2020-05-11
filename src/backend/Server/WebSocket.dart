@@ -37,6 +37,10 @@ class CustomWebSocketStates {
 
 class CustomWebSocket {
     String id;
+    String name;
+    String lobbyId;
+    String ip;
+    bool host;
     WebSocket socket;
     Timer disconnectTimer;
     int state = 2;
@@ -58,7 +62,7 @@ class CustomWebSocket {
       this.disconnectTimer?.cancel();
     }
 
-    void send(int event, Map data) {
+    void send(String event, Map data) {
         this.socket.add(json.encode({"e": event, "data": data}));
     }
 

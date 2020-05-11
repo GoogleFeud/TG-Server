@@ -14,7 +14,7 @@ void upgrade(HttpRequest request, Server server) async {
      return sockets[id];
    }, true);
    sockets[ws.id] = ws;
-   ws.send(1, {"msg": "Hello!"});
+   ws.send("aa", {"msg": "Hello!"});
 }
 
 void main() async {

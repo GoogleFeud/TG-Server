@@ -1,6 +1,7 @@
 
 import 'dart:async';
 
+import '../Server/WebSocket.dart';
 import "./Collectors/PlayerCollection.dart";
 import "./Collectors/RoleCollection.dart";
 import "./Collectors/EventCollection.dart";
@@ -21,8 +22,10 @@ class Engine {
    Map factionalActions = {};
    Timer timer;
    int noDeathsIn = 0;
+   String id;
 
-   Engine() {
+   Engine(String id) {
+      this.id = id;
       this.players = new PlayerCollection(this);
       this.phases = new PhaseCollection(this);
    }
@@ -82,5 +85,22 @@ class Engine {
          for (int bit in bits) tot ^= (1 << bit);
          return tot;
    }
+
+}
+
+class Lobby {
+    String id;
+    List<CustomWebSocket> connections = [];
+
+    Lobby(String id) {
+       this.id = id;
+    }
+
+    Engine expand() {
+       Engine res = new Engine(this.id);
+       for (var connection in this.connections) res.players.add(name: connection.name, ws: connection);
+       this.connections.clear();
+       return res;
+    }
 
 }
