@@ -41,6 +41,7 @@ class CustomWebSocket {
     String lobbyId;
     String ip;
     bool host;
+    bool reconnected = false;
     WebSocket socket;
     Timer disconnectTimer;
     int state = 2;

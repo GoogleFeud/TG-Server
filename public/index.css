@@ -1,5 +1,16 @@
 
 
-p {
-    color: red;
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.home-center {
+    margin-top: 5%;
+    text-align: center;
+}
+
+.home-input {
+    margin-right: 20px;
+    margin-bottom: 30px;
 }

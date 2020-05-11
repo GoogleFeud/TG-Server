@@ -10,8 +10,8 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
   Map reconnecting = {};
 
 
-  void add(String path, String method, Function(HttpRequest, Server) res) {
-    if (this.paths.containsKey(path)) this.paths[path][method] = res;
+  void add(String path, String method, Function res) {
+   if (this.paths.containsKey(path)) this.paths[path][method] = res;
     else {
       this.paths[path] = new Map();
       this.paths[path][method] = res;
@@ -22,7 +22,7 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
     Directory dir = new Directory(dirName);
     for (var file in dir.listSync(recursive: true, followLinks: false) ) {
          file = new File(file.path);
-         this.add(file.path.replaceFirst("$dirName\\", "/").replaceAll("\\", "/"), "GET", (HttpRequest req, Server ser) => ser.sendFile(file.path, req));
+         this.add(file.path.replaceFirst("$dirName\\", "/").replaceAll("\\", "/"), "GET", (HttpRequest req, [Server ser]) => ser.sendFile(file.path, req));
     }
   }
 
@@ -41,30 +41,27 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
   }
 }
 
-  Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier, bool stillConnect, bool ignoreDups]) async {
+Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier]) async {
       CustomWebSocket customSocket;
-      String socketId = this.getCookie("sid_c_d", req)?.value;
+      String socketId = req.requestedUri.queryParameters["socketId"];
+      if (socketId == null || socketId.length != 18) return null;
       if (existingSocketVerifier != null) {
-        CustomWebSocket verified = existingSocketVerifier(socketId);
-        if (verified != null) {
-        if (verified.state == CustomWebSocketStates.TEMP_DISCONNECTED) {
+        Iterable<CustomWebSocket> AllVerified = existingSocketVerifier(socketId, req);
+        if (AllVerified.length > 0) {
+        CustomWebSocket verified = AllVerified.firstWhere((element) => element.id == socketId, orElse: () => null);
+        if (verified != null && verified.state == CustomWebSocketStates.TEMP_DISCONNECTED) {
            this.reconnecting.remove(verified.id);
            verified.state = CustomWebSocketStates.CONNECTED;
+           verified.reconnected = true;
            verified.swapSocket(await WebSocketTransformer.upgrade(req));
            callEvent("reconnect", verified);
            customSocket = verified;
         }
-        else if (verified.state == CustomWebSocketStates.CONNECTED) {
-          if (stillConnect == true) {
+        else if (verified == null) {
             customSocket = new CustomWebSocket();
-            this.setCookie("sid_c_d", customSocket.setId(), req);
+            customSocket.id = socketId;
             customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
-            callEvent("duplicate", verified, {"newSocket": customSocket});
-          }else {
-          callEvent("duplicate", verified);
-          if (ignoreDups == false || ignoreDups == null) return verified;
-          return null;
-          }
+            callEvent("duplicate", verified, {"allDups": AllVerified, "newSocket": customSocket});
         }
         }
       }
@@ -73,14 +70,16 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
       if (socketId != null && customSocket != null) {
         this.reconnecting.remove(customSocket.id);
         customSocket.state = CustomWebSocketStates.CONNECTED;
+        customSocket.reconnected = true;
         customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
         callEvent("reconnect", customSocket);
       }else {
         customSocket = new CustomWebSocket();
-        this.setCookie("sid_c_d", customSocket.setId(), req);
+        customSocket.id = socketId;
         customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
       }
       }
+      customSocket.ip = req.connectionInfo.remoteAddress.address;
       customSocket.socket.listen((data) {
          Map obj = json.decode(data);
          callEvent(obj["e"], customSocket, obj["d"]);
@@ -91,6 +90,7 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
       });
       return Future.delayed(Duration(milliseconds: 500), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
   }
+
 
   void doNotReconnect(String socket_id) {
     this.reconnecting.remove(socket_id);
@@ -106,14 +106,14 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
         req.response.add(buff);
      req.response.close();
      }else {
-     String buff = await new File(path).readAsString();
-     req.response.headers.set('Content-Length', buff.length);
-     req.response.write(buff);
+     File buff = await new File(path);
+     req.response.headers.set('Content-Length', await buff.length());
+     await req.response.addStream(buff.openRead());
      }
      req.response.close();
   }
 
-  void sendJSON(Map object, HttpRequest req) {
+  void sendJSON(dynamic object, HttpRequest req) {
       req.response.write(json.encode(object));
       req.response.close();
   }
@@ -159,3 +159,56 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
 
 
 }
+
+/**
+ *   Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier, bool stillConnect, bool ignoreDups = false]) async {
+      CustomWebSocket customSocket;
+      if (existingSocketVerifier != null) {
+        CustomWebSocket verified = existingSocketVerifier(req);
+        if (verified != null) {
+          if (verified.state == CustomWebSocketStates.TEMP_DISCONNECTED) {
+           this.reconnecting.remove(verified.ip);
+           verified.state = CustomWebSocketStates.CONNECTED;
+           verified.reconnected = true;
+           verified.swapSocket(await WebSocketTransformer.upgrade(req));
+           callEvent("reconnect", verified);
+           customSocket = verified;
+        }
+        else if (verified.state == CustomWebSocketStates.CONNECTED) {
+          if (stillConnect == true) {
+            customSocket = new CustomWebSocket();
+            customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
+            callEvent("duplicate", verified, {"newSocket": customSocket});
+          }else {
+          callEvent("duplicate", verified);
+          if (ignoreDups == false) return verified;
+          return null;
+          }
+        }
+        }
+      }
+      if (customSocket == null) {
+       customSocket = this.reconnecting[req.connectionInfo.remoteAddress.address];
+      if (customSocket != null) {
+        this.reconnecting.remove(customSocket.ip);
+        customSocket.state = CustomWebSocketStates.CONNECTED;
+        customSocket.reconnected = true;
+        customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
+        callEvent("reconnect", customSocket);
+      }else {
+        customSocket = new CustomWebSocket();
+        customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
+      }
+      }
+      customSocket.ip = req.connectionInfo.remoteAddress.address;
+      customSocket.socket.listen((data) {
+         Map obj = json.decode(data);
+         callEvent(obj["e"], customSocket, obj["d"]);
+      }, onDone: () {
+          customSocket.state = CustomWebSocketStates.TEMP_DISCONNECTED;
+          callEvent("disconnect", customSocket);
+          this.reconnecting[customSocket.ip] = customSocket;
+      }, onError: (err) => print("error!"));
+      return Future.delayed(Duration(milliseconds: 500), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
+  }
+ */

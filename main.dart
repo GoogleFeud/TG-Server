@@ -1,7 +1,7 @@
 
-import "./src/backend/Mafia/Engine.dart";
-import 'src/backend/Mafia/Structures/Role.dart';
-import 'src/backend/Mafia/Structures/WinCondition.dart';
+import "./src/Mafia/Engine.dart";
+import 'src//Mafia/Structures/Role.dart';
+import 'src/Mafia/Structures/WinCondition.dart';
 
 
 void main() {
