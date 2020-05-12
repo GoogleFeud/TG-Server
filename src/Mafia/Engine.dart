@@ -88,20 +88,3 @@ class Engine {
    }
 
 }
-
-class Lobby {
-    String id;
-    List<CustomWebSocket> players = [];
-
-    Lobby(String id) {
-       this.id = id;
-    }
-
-    Engine expand() {
-       Engine res = new Engine(this.id);
-       for (var connection in this.players) res.players.add(name: connection.name, ws: connection);
-       this.players.clear();
-       return res;
-    }
-
-}

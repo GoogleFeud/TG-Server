@@ -40,9 +40,10 @@ class CustomWebSocket {
     String name;
     String lobbyId;
     String ip;
-    bool admin = false;
-    bool host = false;
     bool reconnected = false;
+    bool host = false;
+    bool admin = false;
+    bool longRec = false;
     WebSocket socket;
     Timer disconnectTimer;
     int state = 2;
@@ -51,6 +52,7 @@ class CustomWebSocket {
         this.id = _rng_string(20);
         return this.id;
     }
+
 
     Timer startDisconnectTimer(Duration dur, Server server) {
        return this.disconnectTimer = new Timer(dur, () {
@@ -75,6 +77,7 @@ class CustomWebSocket {
     void setPingInterval(int interval) {
        this.socket.pingInterval = Duration(milliseconds: interval);
     }
+
 
 
 }

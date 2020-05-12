@@ -7,7 +7,6 @@ import 'Mafia/Engine.dart';
 import "./requests.dart";
 import "./socketEvents.dart";
 
-Collection<String, Lobby> lobbies = new Collection();
 Collection<String, Engine> games = new Collection();
 
 
@@ -15,8 +14,8 @@ void main() async {
   Server server = new Server();
   server.public("./public");
 
-  setRequests(server, lobbies, games);
-  setSocketEvents(server, lobbies, games);
+  setRequests(server, games);
+  setSocketEvents(server, games);
 
   server.listen(4000);
   

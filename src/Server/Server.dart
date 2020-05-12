@@ -45,7 +45,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
       String socketId = req.requestedUri.queryParameters["socketId"];
       if (socketId == null || socketId.length != 18) return null;
       if (existingSocketVerifier != null) {
-        Iterable<CustomWebSocket> AllVerified = existingSocketVerifier(socketId, req);
+        List<CustomWebSocket> AllVerified = existingSocketVerifier(socketId, req);
         if (AllVerified.length > 0) {
         CustomWebSocket verified = AllVerified.firstWhere((element) => element.id == socketId, orElse: () => null);
         if (verified != null && verified.state == CustomWebSocketStates.TEMP_DISCONNECTED) {
@@ -97,7 +97,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
           callEvent("disconnect", customSocket);
           this.reconnecting[customSocket.id] = customSocket;
       });
-      return Future.delayed(Duration(milliseconds: 500), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
+      return Future.delayed(Duration(milliseconds: 300), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
   }
 
 

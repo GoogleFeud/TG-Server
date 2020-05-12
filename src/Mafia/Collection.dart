@@ -114,15 +114,21 @@ import 'dart:math';
     }
 
     V first() {
+      if (this._map.length == 0) return null;
       return this._map.values.elementAt(0);
     }
 
     V last() {
+      if (this._map.length == 0) return null;
       return this._map.values.elementAt(this._map.length - 1);
     }
 
     Map<K, V> toMap() {
       return this._map;
+    }
+
+    List<V> toList() {
+      return this._map.values.toList();
     }
 
     Iterable<MapEntry<K, V>> entries() {
