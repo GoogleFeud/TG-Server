@@ -22,7 +22,7 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
     Directory dir = new Directory(dirName);
     for (var file in dir.listSync(recursive: true, followLinks: false) ) {
          file = new File(file.path);
-         this.add(file.path.replaceFirst("$dirName\\", "/").replaceAll("\\", "/"), "GET", (HttpRequest req, [Server ser]) => ser.sendFile(file.path, req));
+         this.add(file.path.replaceFirst("$dirName\\", "/").replaceAll("\\", "/"), "GET", (HttpRequest req) => this.sendFile(file.path, req));
     }
   }
 
@@ -32,12 +32,11 @@ import "WebSocket.dart" show CustomWebSocket, callEvent, CustomWebSocketStates;
     port,
   );
   await for (var request in this.engine) {
-       if (request.headers.value("Upgrade") == "websocket") this.paths["/ws"]["UPGRADE"](request, this);
-       else if (this.paths[request.uri.path] == null) {
-         request.response.statusCode = 404;
-         request.response.close();
+       if (request.headers.value("Upgrade") == "websocket") this.paths["/ws"]["UPGRADE"](request);
+       else if (this.paths[request.requestedUri.path] == null) {
+           this.sendFile("./index.html", request);
        }
-       else if (this.paths[request.uri.path][request.method] != null) this.paths[request.uri.path][request.method](request, this);
+       else if (this.paths[request.requestedUri.path][request.method] != null) this.paths[request.requestedUri.path][request.method](request);
   }
 }
 
@@ -61,6 +60,8 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
             customSocket = new CustomWebSocket();
             customSocket.id = socketId;
             customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
+            customSocket.name = req.requestedUri.queryParameters["name"];
+            customSocket.lobbyId = req.requestedUri.queryParameters["roomId"];
             callEvent("duplicate", verified, {"allDups": AllVerified, "newSocket": customSocket});
         }
         }
@@ -79,10 +80,18 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
         customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
       }
       }
+      if (!customSocket.reconnected) {
       customSocket.ip = req.connectionInfo.remoteAddress.address;
+      customSocket.name = req.requestedUri.queryParameters["name"];
+      customSocket.lobbyId = req.requestedUri.queryParameters["roomId"];
+      }
       customSocket.socket.listen((data) {
-         Map obj = json.decode(data);
-         callEvent(obj["e"], customSocket, obj["d"]);
+        try {
+          dynamic obj = json.decode(data); 
+          callEvent(obj["e"], customSocket, obj["d"]);
+        }catch(err) {
+           customSocket.socket.close(400);
+        }
       }, onDone: () {
           customSocket.state = CustomWebSocketStates.TEMP_DISCONNECTED;
           callEvent("disconnect", customSocket);
@@ -149,7 +158,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
      "text/jpg": "image/jpg"
   };
 
-  static String toJSON(Map object) {
+  static String toJSON(dynamic object) {
        return json.encode(object);
   }
 
@@ -160,55 +169,3 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
 
 }
 
-/**
- *   Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocketVerifier, bool stillConnect, bool ignoreDups = false]) async {
-      CustomWebSocket customSocket;
-      if (existingSocketVerifier != null) {
-        CustomWebSocket verified = existingSocketVerifier(req);
-        if (verified != null) {
-          if (verified.state == CustomWebSocketStates.TEMP_DISCONNECTED) {
-           this.reconnecting.remove(verified.ip);
-           verified.state = CustomWebSocketStates.CONNECTED;
-           verified.reconnected = true;
-           verified.swapSocket(await WebSocketTransformer.upgrade(req));
-           callEvent("reconnect", verified);
-           customSocket = verified;
-        }
-        else if (verified.state == CustomWebSocketStates.CONNECTED) {
-          if (stillConnect == true) {
-            customSocket = new CustomWebSocket();
-            customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
-            callEvent("duplicate", verified, {"newSocket": customSocket});
-          }else {
-          callEvent("duplicate", verified);
-          if (ignoreDups == false) return verified;
-          return null;
-          }
-        }
-        }
-      }
-      if (customSocket == null) {
-       customSocket = this.reconnecting[req.connectionInfo.remoteAddress.address];
-      if (customSocket != null) {
-        this.reconnecting.remove(customSocket.ip);
-        customSocket.state = CustomWebSocketStates.CONNECTED;
-        customSocket.reconnected = true;
-        customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
-        callEvent("reconnect", customSocket);
-      }else {
-        customSocket = new CustomWebSocket();
-        customSocket.swapSocket(await WebSocketTransformer.upgrade(req));
-      }
-      }
-      customSocket.ip = req.connectionInfo.remoteAddress.address;
-      customSocket.socket.listen((data) {
-         Map obj = json.decode(data);
-         callEvent(obj["e"], customSocket, obj["d"]);
-      }, onDone: () {
-          customSocket.state = CustomWebSocketStates.TEMP_DISCONNECTED;
-          callEvent("disconnect", customSocket);
-          this.reconnecting[customSocket.ip] = customSocket;
-      }, onError: (err) => print("error!"));
-      return Future.delayed(Duration(milliseconds: 500), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
-  }
- */

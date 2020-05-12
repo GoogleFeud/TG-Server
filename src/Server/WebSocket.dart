@@ -40,7 +40,8 @@ class CustomWebSocket {
     String name;
     String lobbyId;
     String ip;
-    bool host;
+    bool admin = false;
+    bool host = false;
     bool reconnected = false;
     WebSocket socket;
     Timer disconnectTimer;
@@ -63,8 +64,8 @@ class CustomWebSocket {
       this.disconnectTimer?.cancel();
     }
 
-    void send(String event, Map data) {
-        this.socket.add(json.encode({"e": event, "data": data}));
+    void send(String event, dynamic data) {
+        this.socket.add(json.encode({"e": event, "d": data}));
     }
 
     void swapSocket(WebSocket socket) {
