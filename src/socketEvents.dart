@@ -12,12 +12,13 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
     var game = games.get(s.lobbyId);
     if (game != null) {
     s.send("lobbyInfo", {
-          "players": game?.players?.map<Map>((s) => {"name": s.name, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
-          "yourName": s.name
+          "players": game?.players?.map<Map>((s) => {"name": s.name, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
+          "yourName": s.name,
+          "rl": game.rolelist.where((w) => w != null).toList()
           // Send other info if the game has started...
        });
     if (s.longRec) {
-      game.players.forEach((p) => p.ws.send("playerReconnect", {"player": s.name}));
+      game.players.forEach((p) => p.ws.send("playerReconnect", {"id": s.id}));
       s.longRec = false;
     }
     }
@@ -27,19 +28,22 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
     Future.delayed(Duration(seconds: 5), () {
        if (s.state == CustomWebSocketStates.CONNECTED) return;
        s.longRec = true;
-       games.get(s.lobbyId)?.players?.forEach((p) => p.ws.send("playerTempDisconnect", {"player": s.name}));
+       games.get(s.lobbyId)?.players?.forEach((p) => p.ws.send("playerTempDisconnect", {"id": s.id}));
     });
-    s.startDisconnectTimer(Duration(seconds: 20), server);
+    s.startDisconnectTimer(Duration(seconds: 10), server);
   });
 
   subscribeToEvent("remove", (CustomWebSocket s, data) { // Complete disconnection
     if (games.has(s.lobbyId)) {
      var lob = games.get(s.lobbyId);
      if (lob.timer == null) {
-     lob.players.remove(s.name);
-     if (s.host) lob.players.first().ws.host = true;
+     lob.rolelist[lob.players.size] = null;
+     lob.players.remove(s.id);
      if (lob.players.size == 0) games.delete(s.lobbyId);
-     lob.players.forEach((v) => v.ws.send("playerLeave", {"name": s.name}));
+     else {
+            if (s.host) lob.players.first().ws.host = true;
+            lob.players.forEach((v) => v.ws.send("playerLeave", {"id": s.id}));
+     }
      }
    }
   });

@@ -97,7 +97,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
           callEvent("disconnect", customSocket);
           this.reconnecting[customSocket.id] = customSocket;
       });
-      return Future.delayed(Duration(milliseconds: 300), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
+      return Future.delayed(Duration(milliseconds: 100), () => customSocket.socket.readyState == WebSocket.open ? customSocket:null);
   }
 
 

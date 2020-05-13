@@ -17,6 +17,7 @@ EventCollection events = new EventCollection();
 class Engine {
    PlayerCollection players;
    List<CustomWebSocket> spectators;
+   List<String> rolelist = new List(15);
    RoleCollection roles = new RoleCollection();
    PhaseCollection phases;
    WinConditioner winConditioner = new WinConditioner();

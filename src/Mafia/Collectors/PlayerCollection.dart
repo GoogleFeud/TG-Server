@@ -15,7 +15,7 @@ class PlayerCollection extends Collection<String, Player> {
 
     Player add({String name, CustomWebSocket ws}) {
          Player pl = new Player(engine: this.engine, number: this.size + 1, name: name, ws: ws);
-         this.set(name, pl);
+         this.set(ws.id, pl);
          return pl;
     }
 

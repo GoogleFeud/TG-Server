@@ -30,6 +30,7 @@ dynamic callEvent(String packetName, CustomWebSocket s, [Map data]) {
 }
 
 class CustomWebSocketStates {
+    static const KICKED = 3;
     static const CONNECTED = 2;
     static const TEMP_DISCONNECTED = 1;
     static const DISCONNECTED = 0;
@@ -54,8 +55,9 @@ class CustomWebSocket {
     }
 
 
-    Timer startDisconnectTimer(Duration dur, Server server) {
-       return this.disconnectTimer = new Timer(dur, () {
+     startDisconnectTimer(Duration dur, Server server) {
+      if (this.state == CustomWebSocketStates.KICKED) return;
+      this.disconnectTimer = new Timer(dur, () {
            server.doNotReconnect(this.id);
            this.state = CustomWebSocketStates.DISCONNECTED;
            callEvent("remove", this);
@@ -67,6 +69,7 @@ class CustomWebSocket {
     }
 
     void send(String event, dynamic data) {
+        if (this.socket.readyState == WebSocket.closed) return;
         this.socket.add(json.encode({"e": event, "d": data}));
     }
 
@@ -77,6 +80,13 @@ class CustomWebSocket {
     void setPingInterval(int interval) {
        this.socket.pingInterval = Duration(milliseconds: interval);
     }
+
+    void close(Server server) {
+       this.state = CustomWebSocketStates.KICKED;
+       this.socket.close();
+       server.doNotReconnect(this.id);
+       callEvent("remove", this);
+    } 
 
 
 
