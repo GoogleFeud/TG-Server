@@ -50,6 +50,10 @@ class PlayerCollection extends Collection<String, Player> {
       return this.filter((v) => v.role.alignment == alignment && (faction == null || v.role.faction == faction));
     }
 
+    Player figureOutPlayer(String input) {
+       return this.find((p) => p.name == input || int.tryParse(input) == p.num);
+    }
+
     List<Player> orderByPriority() {
       List<Player> s = this.filter((v) => v.role.attributes.get(Role.ALWAYS_ACTION) || (v.action != null && v.role != null && v.role.action != null && v.role.priority > 0 && v.getFromStorage("roleblocked") != true)).values();
       s.sort((p, p1) => p.priority - p1.priority);

@@ -76,6 +76,15 @@ class RoleCollection extends Collection<String, Role> {
         return roles;
     }
 
+    bool testSlot(String roleSlot) {
+       List<String> slot = roleSlot.split(" ");
+       if (slot[0] == "Any") return true;
+       else if (this.has(slot[0])) return true;
+       else if (slot[0] == "Random" && slot.length > 1) return this.some((r) => r.faction == slot[1]);
+       else if (slot.length > 1) return this.some((r) => r.faction == slot[0] && r.alignment == slot[1]);
+       return false;
+    }
+
 
 
 }

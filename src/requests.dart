@@ -6,6 +6,7 @@ import 'Mafia/Collection.dart';
 import 'Mafia/Engine.dart';
 import 'Server/Server.dart';
 import 'Server/WebSocket.dart';
+import "./roles.dart";
 
 void setRequests(Server server, Collection<String, Engine> games) {
 
@@ -17,9 +18,12 @@ void setRequests(Server server, Collection<String, Engine> games) {
          return request.response.close();
      };
     var game = games.get(roomId);
-    if (game == null) game = games.set(roomId, new Engine(roomId));
+    if (game == null) {
+      game = games.set(roomId, new Engine(roomId));
+      loadAllRoles(game);
+    }
     CustomWebSocket ws = await server.createWebsocket(request, (id, HttpRequest req) {
-      return game.players.filter((w) => w.ws.id == id || w.ws.ip == req.connectionInfo.remoteAddress.address || w.name == req.requestedUri.queryParameters["name"]).map<CustomWebSocket>((w) => w.ws);
+      return game.players.filter((w) => w.ws.id == id || w.name == req.requestedUri.queryParameters["name"] || w.ws.ip == req.connectionInfo.remoteAddress.address).map<CustomWebSocket>((w) => w.ws);
     });
     if (ws.name == "a" || game.players.size == 15) {
     ws.send("kick", {});
@@ -32,7 +36,7 @@ void setRequests(Server server, Collection<String, Engine> games) {
     game.players.add(name: ws.name, ws: ws);
     if (game.players.size == 1) ws.host = true;
     ws.send("lobbyInfo", {
-          "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
+          "players": game.players.map<Map>((s) => {"name": s.name, "dead": s.dead, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
           "yourName": ws.name,
           "rl": game.rolelist.where((w) => w != null).toList()
           // Send other info if the game has started...
@@ -67,10 +71,10 @@ void setRequests(Server server, Collection<String, Engine> games) {
   
   server.add("/api/kick", "GET", (HttpRequest req) {
     var game = games.get(req.requestedUri.queryParameters["lobbyId"]);
-    if (game == null || !game.players.has(req.requestedUri.queryParameters["player"])) return server.sendJSON({"res": false}, req);
+    var kickee = game.players.figureOutPlayer(req.requestedUri.queryParameters["player"]);
+    if (game == null || kickee == null) return server.sendJSON({"res": false}, req);
     var kicker = game.players.get(req.requestedUri.queryParameters["kicker"]);
-    if (!kicker.ws.admin) return server.sendJSON({"res": false}, req);
-    var kickee = game.players.get(req.requestedUri.queryParameters["player"]);
+    if (kicker == null || !kicker.ws.admin) return server.sendJSON({"res": false}, req);
     kickee.ws.send("kick", {});
     kickee.ws.close(server);
     server.sendJSON({"res": true}, req);
@@ -78,9 +82,10 @@ void setRequests(Server server, Collection<String, Engine> games) {
 
   server.add("/api/changerl", "GET", (HttpRequest req) {
      var game = games.get(req.requestedUri.queryParameters["lobbyId"]);
-     var setter = game.players.get(req.requestedUri.queryParameters["setter"]);
+     var setter = game?.players?.get(req.requestedUri.queryParameters["setter"]);
      if (game == null || setter == null) return server.sendJSON({"res": false}, req);
      if (!setter.ws.admin && !setter.ws.host) return server.sendJSON({"res": false}, req);
+     if (!game.roles.testSlot(req.requestedUri.queryParameters["content"])) return server.sendJSON({"res": false}, req);
      try {
        game.rolelist[int.parse(req.requestedUri.queryParameters["index"])] = req.requestedUri.queryParameters["content"];
      }catch(err) {
@@ -88,6 +93,15 @@ void setRequests(Server server, Collection<String, Engine> games) {
      }
      server.sendJSON({"res": true}, req);
      game.players.forEach((p) => p.ws.send("rolelistChange", {"index": req.requestedUri.queryParameters["index"], "content": req.requestedUri.queryParameters["content"], "changedBy": setter.name } ));
+  });
+
+  server.add("/api/whisper", "GET", (HttpRequest req) {
+    var game = games.get(req.requestedUri.queryParameters["lobbyId"]);
+    if (game == null) return server.sendJSON({"res": false}, req);
+    var whisperer = game.players.get(req.requestedUri.queryParameters["whisperer"]);
+    var target = game.players.figureOutPlayer(req.requestedUri.queryParameters["receiver"]);
+    if (whisperer == null || target == null || whisperer.dead || target.dead) server.sendJSON({"res": false}, req);
+    game.players.forEach((p) => p.ws.send("message", {"content": req.requestedUri.queryParameters["msg"], "sender": whisperer.name, "receiver": target.name, "whisper": true}));
   });
 
 }

@@ -37,11 +37,13 @@ class Player {
     NightAction setNightAction([Player target, Map data]) {
          NightAction a = new NightAction(this, target, data);
          this.action = a;
+         if (data["factionalAction"] == true) this.engine.factionalActions[this.role.faction] = this;
          events.emit("setAction", this.engine, {"player": this, "action": a});
          return a;
     }
 
     void cancelNightAction() {
+        if (this.action.others["factionalAction"] == true) this.engine.factionalActions.remove(this.role.faction);
         events.emit("cancelAction", this.engine, {"player": this, "action": this.action});
         this.action = null; 
     }

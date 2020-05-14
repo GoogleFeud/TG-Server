@@ -93,6 +93,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
            customSocket.socket.close(400);
         }
       }, onDone: () {
+          if (customSocket.state == CustomWebSocketStates.KICKED || customSocket.state == CustomWebSocketStates.DISCONNECTED) return;
           customSocket.state = CustomWebSocketStates.TEMP_DISCONNECTED;
           callEvent("disconnect", customSocket);
           this.reconnecting[customSocket.id] = customSocket;
