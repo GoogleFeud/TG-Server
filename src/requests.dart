@@ -19,7 +19,7 @@ void setRequests(Server server, Collection<String, Engine> games) {
     var game = games.get(roomId);
     if (game == null) game = games.set(roomId, new Engine(roomId));
     CustomWebSocket ws = await server.createWebsocket(request, (id, HttpRequest req) {
-      return game.players.filter((w) => w.ws.ip == req.connectionInfo.remoteAddress.address || w.name == req.requestedUri.queryParameters["name"]).map<CustomWebSocket>((w) => w.ws);
+      return game.players.filter((w) => w.ws.id == id || w.ws.ip == req.connectionInfo.remoteAddress.address || w.name == req.requestedUri.queryParameters["name"]).map<CustomWebSocket>((w) => w.ws);
     });
     if (ws.name == "a" || game.players.size == 15) {
     ws.send("kick", {});
@@ -28,8 +28,8 @@ void setRequests(Server server, Collection<String, Engine> games) {
     }
     if (!ws.reconnected && game.timer == null) {
     if (game.players.size > 0) game.players.forEach((p) => p.ws.send("playerJoin", {"name": ws.name, "id": ws.id}));
-    game.players.add(name: ws.name, ws: ws);
     game.rolelist[game.players.size] = "Any";
+    game.players.add(name: ws.name, ws: ws);
     if (game.players.size == 1) ws.host = true;
     ws.send("lobbyInfo", {
           "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),

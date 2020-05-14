@@ -34,10 +34,11 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
   });
 
   subscribeToEvent("remove", (CustomWebSocket s, data) { // Complete disconnection
+    if (s.state == CustomWebSocketStates.DISCONNECTED) return;
     if (games.has(s.lobbyId)) {
      var lob = games.get(s.lobbyId);
      if (lob.timer == null) {
-     lob.rolelist[lob.players.size] = null;
+     lob.rolelist[lob.players.size - 1] = null;
      lob.players.remove(s.id);
      if (lob.players.size == 0) games.delete(s.lobbyId);
      else {
@@ -46,6 +47,7 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
      }
      }
    }
+   s.state = CustomWebSocketStates.DISCONNECTED;
   });
 
   subscribeToEvent("duplicate", (CustomWebSocket s, data) { // When somebody tries to connect with the same IDs

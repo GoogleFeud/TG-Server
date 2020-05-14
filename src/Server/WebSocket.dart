@@ -59,8 +59,7 @@ class CustomWebSocket {
       if (this.state == CustomWebSocketStates.KICKED) return;
       this.disconnectTimer = new Timer(dur, () {
            server.doNotReconnect(this.id);
-           this.state = CustomWebSocketStates.DISCONNECTED;
-           callEvent("remove", this);
+           callEvent("remove", this); // Update state in timer
        });
     }
 
@@ -84,6 +83,7 @@ class CustomWebSocket {
     void close(Server server) {
        this.state = CustomWebSocketStates.KICKED;
        this.socket.close();
+       if (this.disconnectTimer != null) this.disconnectTimer.cancel();
        server.doNotReconnect(this.id);
        callEvent("remove", this);
     } 
