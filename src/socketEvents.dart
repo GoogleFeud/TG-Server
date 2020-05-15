@@ -12,7 +12,7 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
     var game = games.get(s.lobbyId);
     if (game != null) {
     s.send("lobbyInfo", {
-          "players": game?.players?.map<Map>((s) => {"name": s.name, "dead": s.dead, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
+          "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "details": s.toBits().bits}),
           "yourName": s.name,
           "rl": game.rolelist.where((w) => w != null).toList()
           // Send other info if the game has started...

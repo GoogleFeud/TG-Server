@@ -36,7 +36,7 @@ void setRequests(Server server, Collection<String, Engine> games) {
     game.players.add(name: ws.name, ws: ws);
     if (game.players.size == 1) ws.host = true;
     ws.send("lobbyInfo", {
-          "players": game.players.map<Map>((s) => {"name": s.name, "dead": s.dead, "id": s.ws.id, "host": s.ws.host, "admin": s.ws.admin, "disconnected": s.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED}),
+          "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "details": s.toBits().bits}),
           "yourName": ws.name,
           "rl": game.rolelist.where((w) => w != null).toList()
           // Send other info if the game has started...
@@ -54,6 +54,7 @@ void setRequests(Server server, Collection<String, Engine> games) {
         else {
         var game = games.get(gameId);
         server.sendJSON(game.players.filter((p) => p.ws.ip == req.connectionInfo.remoteAddress.address ? p.ws.state != CustomWebSocketStates.TEMP_DISCONNECTED:true).map((p) => p.name).toList(), req);
+       //server.sendJSON(game.players.map((p) => p.name).toList(), req);
         }
   });
 
@@ -102,6 +103,13 @@ void setRequests(Server server, Collection<String, Engine> games) {
     var target = game.players.figureOutPlayer(req.requestedUri.queryParameters["receiver"]);
     if (whisperer == null || target == null || whisperer.dead || target.dead) server.sendJSON({"res": false}, req);
     game.players.forEach((p) => p.ws.send("message", {"content": req.requestedUri.queryParameters["msg"], "sender": whisperer.name, "receiver": target.name, "whisper": true}));
+  });
+
+  server.add("/api/start", "GET", (HttpRequest req) {
+      var game = games.get(req.requestedUri.queryParameters["lobbyId"]);
+      if (game == null || !game.players.has(req.requestedUri.queryParameters["starter"])) return server.sendJSON({"res": false}, req);
+      if (game.roll(game.rolelist.where((w) => w != null).toList()) == false) return server.sendJSON({"res": false}, req);
+      game.start();
   });
 
 }

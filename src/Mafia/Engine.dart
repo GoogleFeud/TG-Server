@@ -55,9 +55,7 @@ class Engine {
    }
 
    void stop() {
-     this.players.clear();
      this.timer.cancel();
-     this.noDeathsIn = 0;
   }
 
    List<int> timeLeft() {

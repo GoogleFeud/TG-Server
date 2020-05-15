@@ -168,8 +168,12 @@ class Bitfield {
       this.bits |= bits;
     }
 
-    void update(int position, int bitValue) {
-       this.bits ^= (1 << position);
+    void clear(int position) {
+        this.bits = this.bits & ~(1 << position);
+    }
+
+    void update(int position) {
+       this.bits = (this.bits | (1 << position));
     }
 
 

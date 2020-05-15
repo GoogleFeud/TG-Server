@@ -104,7 +104,7 @@ class Player {
 
     bool canKill(Player target) {
         if (target.role.attributes.get(Role.AUTO_VEST) && this.attack <= (target.defense + 1)) {
-            target.role.attributes.update(Role.AUTO_VEST, 0);
+            target.role.attributes.clear(Role.AUTO_VEST);
             return false;
         }
         return this.attack > target.defense;
@@ -142,6 +142,23 @@ class Player {
 
     String get displayRole {
       return (this.getFromStorage("cleaned") == true) ? "???":this.role.name;
+    }
+
+    Bitfield toBits([Player requestedPlayer]) {
+      var field = new Bitfield();
+      if (this.dead) field.update(0); // Is dead, pos: 0
+      if (this.ws.host) field.update(1); // Is host: pos 1
+      if (this.ws.admin) field.update(2); // Is admin, pos 2
+      if (this.ws.state == CustomWebSocketStates.DISCONNECTED) field.update(3); // Is disconnected
+   /*   if (this.role != null) {
+        field.update(4, this.role.amountOfTargets); // Amount of targets
+        field.update(5, this.role.amountOfTargets == 1 ? 1:0); // If 1 target
+        field.update(6, this.role.amountOfTargets == 2 ? 1:0); // If 2 targets
+        field.update(5, this.role.allowSelf); // If can target self
+        field.update(6, this.role.canTargetDead); // If can target dead
+        field.update(7, this.role.factionalAction); // Factional mafia
+      }  */
+      return field;
     }
 
     toString() {
