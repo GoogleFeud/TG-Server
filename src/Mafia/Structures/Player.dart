@@ -165,5 +165,16 @@ class Player {
       return this.name;
     }
 
+    clear() {
+       this.role = null;
+       this.votes = 0;
+       this.votedFor = null;
+       this.action = null;
+       this.dead = false;
+       this.tempStorage = {};
+       this.permStorage = {"votingPower": 1};
+       this.deathReasons = [];
+    }
+
 }
 

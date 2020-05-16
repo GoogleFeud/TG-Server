@@ -45,7 +45,7 @@ class Engine {
      for (Role role in roles) {
          Player rng = players.random()[0];
          rng.setTheRole(role);
-         players.delete(rng.name);
+         players.delete(rng.ws.id);
      }
      return true;
    }
@@ -56,6 +56,9 @@ class Engine {
 
    void stop() {
      this.timer.cancel();
+     this.timer = null;
+     this.players.forEach((p) => p.clear());
+     this.winConditioner.winners.clear();
   }
 
    List<int> timeLeft() {

@@ -30,7 +30,7 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
        s.longRec = true;
        games.get(s.lobbyId)?.players?.forEach((p) => p.ws.send("playerTempDisconnect", {"id": s.id}));
     });
-    s.startDisconnectTimer(Duration(seconds: 10), server);
+    s.startDisconnectTimer(Duration(seconds: 60), server);
   });
 
   subscribeToEvent("remove", (CustomWebSocket s, data) { // Complete disconnection

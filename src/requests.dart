@@ -21,6 +21,7 @@ void setRequests(Server server, Collection<String, Engine> games) {
     if (game == null) {
       game = games.set(roomId, new Engine(roomId));
       loadAllRoles(game);
+      loadGameSettings(game);
     }
     CustomWebSocket ws = await server.createWebsocket(request, (id, HttpRequest req) {
       return game.players.filter((w) => w.ws.id == id || w.name == req.requestedUri.queryParameters["name"] || w.ws.ip == req.connectionInfo.remoteAddress.address).map<CustomWebSocket>((w) => w.ws);
@@ -110,6 +111,14 @@ void setRequests(Server server, Collection<String, Engine> games) {
       if (game == null || !game.players.has(req.requestedUri.queryParameters["starter"])) return server.sendJSON({"res": false}, req);
       if (game.roll(game.rolelist.where((w) => w != null).toList()) == false) return server.sendJSON({"res": false}, req);
       game.start();
+  });
+
+  server.add("/api/getDisconnectedAlts", "GET", (HttpRequest req) {
+      var gamesIn = games.filter((g) => g.players.some((p) => p.ws.ip == req.connectionInfo.remoteAddress.address && p.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED));
+      if (gamesIn.size == 0) return server.sendJSON({}, req);
+      return server.sendJSON({
+        "lobbies": gamesIn.map((g) => ({"alts": g.players.filter((p) => p.ws.ip == req.connectionInfo.remoteAddress.address && p.ws.state == CustomWebSocketStates.TEMP_DISCONNECTED).map((p) => ({"name": p.name, "id": p.ws.id, "lobbyId": p.engine.id}))}))
+        }, req); 
   });
 
 }
