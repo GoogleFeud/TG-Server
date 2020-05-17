@@ -1,5 +1,6 @@
 
 import "../Collection.dart" show Bitfield;
+import '../Engine.dart';
 import 'WinCondition.dart';
 
 
@@ -50,6 +51,14 @@ class Role {
 
    toString() {
      return this.name;
+   }
+
+   simplify(Engine engine) {
+     return {
+       "name": this.name,
+       "mafia": (this.faction == "Mafia") ? engine.players.fromFaction("Mafia").map((p) => p.name):null,
+       "details": [this.amountOfTargets, this.allowSelf, this.canTargetDead, this.factionalAction]
+     };
    }
 
    static const int ALWAYS_ACTION = 0; // Tested

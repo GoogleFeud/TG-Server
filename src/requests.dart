@@ -31,18 +31,23 @@ void setRequests(Server server, Collection<String, Engine> games) {
     ws.close(server);
     return;
     }
-    if (!ws.reconnected && game.timer == null) {
-    if (game.players.size > 0) game.players.forEach((p) => p.ws.send("playerJoin", {"name": ws.name, "id": ws.id}));
+    if (game.timer == null || ws.reconnected) {
+    if (!ws.reconnected) {
+      if (game.players.size > 0) game.players.forEach((p) => p.ws.send("playerJoin", {"name": ws.name, "id": ws.id}));
     game.rolelist[game.players.size] = "Any";
     game.players.add(name: ws.name, ws: ws);
     if (game.players.size == 1) ws.host = true;
+    }
     ws.send("lobbyInfo", {
-          "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "details": s.toBits().bits}),
+          "players": game.players.map<Map>((s) => s.simplify()),
           "yourName": ws.name,
-          "rl": game.rolelist.where((w) => w != null).toList()
+          "rl": game.rolelist.where((w) => w != null).toList(),
+          "phase": (game.phases.current != null) ? game.phases.current.simplify(game):null
           // Send other info if the game has started...
        });
-    }else if (game.timer != null) {
+    ws.reconnected = false;
+    }
+    else if (game.timer != null) {
             CustomWebSocket ws = await server.createWebsocket(request);
             game.spectators.add(ws);
             // Alert all spectators, send game data...

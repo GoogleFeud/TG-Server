@@ -12,9 +12,10 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
     var game = games.get(s.lobbyId);
     if (game != null) {
     s.send("lobbyInfo", {
-          "players": game.players.map<Map>((s) => {"name": s.name, "id": s.ws.id, "details": s.toBits().bits}),
+          "players": game.players.map<Map>((s) => s.simplify()),
           "yourName": s.name,
-          "rl": game.rolelist.where((w) => w != null).toList()
+          "rl": game.rolelist.where((w) => w != null).toList(),
+          "phase": (game.phases.current != null) ? game.phases.current.simplify(game):null,
           // Send other info if the game has started...
        });
     if (s.longRec) {

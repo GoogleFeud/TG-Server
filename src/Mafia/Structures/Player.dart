@@ -29,7 +29,8 @@ class Player {
     }
 
     Role setTheRole(Role role) {
-        events.emit("setRole", this.engine, {"player": this, "previous": this.role, "current": role});
+        var prev = this.role;
+        Future.delayed(Duration(milliseconds: 200), () => events.emit("setRole", this.engine, {"player": this, "previous": prev, "current": role}));
         this.role = role;
         return role;
     }
@@ -174,6 +175,18 @@ class Player {
        this.tempStorage = {};
        this.permStorage = {"votingPower": 1};
        this.deathReasons = [];
+    }
+
+    simplify([bool includeRole = true]) {
+      return {
+        "name": this.name,
+        "id": this.ws.id,
+        "details": this.toBits().bits,
+        "role": (includeRole && this.role != null) ? this.role.simplify(this.engine):null,
+        "v": (this.role != null) ? this.votes:null,
+        "vFor": (this.votedFor != null) ? this.votedFor.simplify():null,
+        "dead": this.dead
+      };
     }
 
 }

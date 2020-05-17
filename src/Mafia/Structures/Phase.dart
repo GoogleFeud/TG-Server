@@ -1,5 +1,7 @@
 
 
+import '../Engine.dart';
+
 class Phase {
     int duration; // in MS
     int iterations;
@@ -15,6 +17,14 @@ class Phase {
 
     toString() {
       return this.name;
+    }
+
+    simplify([Engine engine]) {
+      return {
+         "name": this.name,
+         "iters": this.iterations,
+         "dur": (engine != null) ?  (this.duration - (DateTime.now().millisecondsSinceEpoch - engine.phases.phaseStartedAt.millisecondsSinceEpoch)).round():this.duration,
+      };
     }
     
 }

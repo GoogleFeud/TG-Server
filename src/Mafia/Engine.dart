@@ -75,6 +75,7 @@ class Engine {
 
    bool checkWin() {
       var check = this.winConditioner.check(this);
+      print(check);
       if (check != null) {
          events.emit("win", this, {"check": check});
          this.stop();
