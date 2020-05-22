@@ -90,6 +90,7 @@ Future<CustomWebSocket> createWebsocket(HttpRequest req, [Function existingSocke
           dynamic obj = json.decode(data); 
           callEvent(obj["e"], customSocket, obj["d"]);
         }catch(err) {
+           print(err);
            customSocket.socket.close(400);
         }
       }, onDone: () {

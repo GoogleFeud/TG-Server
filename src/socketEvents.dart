@@ -60,7 +60,10 @@ void setSocketEvents(Server server, Collection<String, Engine> games) {
   subscribeToEvent("message", (CustomWebSocket s, data) {
     Engine room = games.get(s.lobbyId) ?? games.get(s.lobbyId);
     if (room == null) return;
-    room.players.forEach((p) => p.ws.send("message", data));
+    if (room.phases.current?.name == "Night") room.players.forEach((p) {
+       if (p.role.faction == "Mafia") p.ws.send("message", data);
+      });
+    else room.players.forEach((p) => p.ws.send("message", data));
   });
 
 }

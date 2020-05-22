@@ -30,10 +30,10 @@ class PhaseCollection extends Collection<String, Phase> {
 
        this.engine.timer = new Timer(Duration(milliseconds: customDuration != null ? customDuration:this.current.duration), () {
 
-           if (this.engine.noDeathsIn > 5) {
+         /*   if (this.engine.noDeathsIn > 5) {
              events.emit("draw", this.engine);
              this.engine.stop();
-           }
+           } */
 
            this.phaseStartedAt = DateTime.now();
            this.engine.noDeathsIn++;

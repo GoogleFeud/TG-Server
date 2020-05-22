@@ -56,7 +56,7 @@ class Role {
    simplify(Engine engine) {
      return {
        "name": this.name,
-       "mafia": (this.faction == "Mafia") ? engine.players.fromFaction("Mafia").map((p) => p.name):null,
+       "mafia": (this.faction == "Mafia") ? engine.players.fromFaction("Mafia").map((p) => p.ws.id):null,
        "details": [this.amountOfTargets, this.allowSelf, this.canTargetDead, this.factionalAction]
      };
    }

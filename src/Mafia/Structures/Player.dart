@@ -26,6 +26,7 @@ class Player {
        this.name = name;
        this.num = number;
        this.ws = ws;
+       this.action = new NightAction(this);
     }
 
     Role setTheRole(Role role) {
@@ -36,17 +37,18 @@ class Player {
     }
 
     NightAction setNightAction([Player target, Map data]) {
-         NightAction a = new NightAction(this, target, data);
-         this.action = a;
+         this.action.target = target;
+         this.action.others = data;
+         this.action.activated = true;
          if (data["factionalAction"] == true) this.engine.factionalActions[this.role.faction] = this;
-         events.emit("setAction", this.engine, {"player": this, "action": a});
-         return a;
+         events.emit("setAction", this.engine, {"player": this});
+         return this.action;
     }
 
     void cancelNightAction() {
         if (this.action.others["factionalAction"] == true) this.engine.factionalActions.remove(this.role.faction);
-        events.emit("cancelAction", this.engine, {"player": this, "action": this.action});
-        this.action = null; 
+        events.emit("cancelAction", this.engine, {"player": this});
+        this.action.clear();
     }
 
     vote(Player target) {
@@ -151,14 +153,6 @@ class Player {
       if (this.ws.host) field.update(1); // Is host: pos 1
       if (this.ws.admin) field.update(2); // Is admin, pos 2
       if (this.ws.state == CustomWebSocketStates.DISCONNECTED) field.update(3); // Is disconnected
-   /*   if (this.role != null) {
-        field.update(4, this.role.amountOfTargets); // Amount of targets
-        field.update(5, this.role.amountOfTargets == 1 ? 1:0); // If 1 target
-        field.update(6, this.role.amountOfTargets == 2 ? 1:0); // If 2 targets
-        field.update(5, this.role.allowSelf); // If can target self
-        field.update(6, this.role.canTargetDead); // If can target dead
-        field.update(7, this.role.factionalAction); // Factional mafia
-      }  */
       return field;
     }
 
@@ -170,7 +164,7 @@ class Player {
        this.role = null;
        this.votes = 0;
        this.votedFor = null;
-       this.action = null;
+       this.action.clear();
        this.dead = false;
        this.tempStorage = {};
        this.permStorage = {"votingPower": 1};
@@ -178,15 +172,16 @@ class Player {
     }
 
     simplify([bool includeRole = true]) {
-      return {
+      var obj = {
         "name": this.name,
         "id": this.ws.id,
         "details": this.toBits().bits,
-        "role": (includeRole && this.role != null) ? this.role.simplify(this.engine):null,
         "v": (this.role != null) ? this.votes:null,
-        "vFor": (this.votedFor != null) ? this.votedFor.simplify():null,
-        "dead": this.dead
+        "vFor": (this.votedFor != null) ? this.votedFor.ws.id:null,
       };
+      if (this.engine.phases.current?.name == "Night" && this.action.activated) obj["action"] = this.action.simplify();
+      if (this.role != null) obj["role"] = (includeRole) ? this.role.simplify(this.engine):this.role.name;
+      return obj;
     }
 
 }
